@@ -9,4 +9,5 @@ module.exports = (app) => {
     Atendimento.adiciona(atendimento)
     res.send('Post Atendimento')
   });
+  
 };
