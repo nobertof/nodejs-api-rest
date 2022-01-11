@@ -1,14 +1,14 @@
 const customExpress = require("./config/customExpress");
 const conexao = require("./infraestrutura/database/conexao");
-const Tabelas = require('./infraestrutura/database/tabelas')
-conexao.connect((erro) => {
-  if (erro) {
-    console.log(erro);
-  } else {
-    console.log("conectado com sucesso!");
-    Tabelas.init(conexao)
-    const app = customExpress();
+const Tabelas = require("./infraestrutura/database/tabelas");
+const config = require("config");
 
-    app.listen(3000, () => console.log("servidor rodando na porta 3000"));
-  }
-});
+const roteador = require('./routes/fornecedores')
+console.log("conectado com sucesso!");
+//Tabelas.init(conexao);
+const app = customExpress();
+
+app.use('/api/fornecedores', roteador)
+app.listen(config.get("api.porta"), () =>
+  console.log(`servidor rodando na porta ${config.get("api.porta")}`)
+);
