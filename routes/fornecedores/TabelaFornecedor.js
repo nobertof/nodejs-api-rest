@@ -2,7 +2,7 @@ const ModeloTabela = require("./ModeloTabelaFornecedor");
 const NaoEncontrado = require('../../erros/NaoEncontrado')
 module.exports = {
   listar() {
-    return ModeloTabela.findAll();
+    return ModeloTabela.findAll({raw:true});
   },
   inserir(fornecedor) {
     return ModeloTabela.create(fornecedor);
