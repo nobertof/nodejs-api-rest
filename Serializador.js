@@ -1,29 +1,40 @@
 const ValorNaoSuportado = require("./erros/ValorNaoSuportado");
+const jsontoxml = require("jsontoxml");
 class Serializador {
   json(dados) {
     return JSON.stringify(dados);
   }
+  xml(dados) {
+    let tag = this.tagSingular
+
+    if(Array.isArray(dados)){
+        tag = this.tagPlural
+        dados = dados.map((item)=>({[this.tagSingular]:item}))
+    }
+    return jsontoxml({ [tag]: dados });
+  }
   serializar(dados) {
+    dados = this.filtrar(dados);
     if (this.contentType === "application/json") {
-      return this.json(this.filtrar(dados));
+      return this.json(dados);
+    }
+    if (this.contentType === "application/xml") {
+      return this.xml(dados);
     }
     throw new ValorNaoSuportado(this.contentType);
   }
   filtrarObjeto(dados) {
     const novoObjeto = {};
-    console.log(this.camposPublicos);
     this.camposPublicos.forEach((campo) => {
       if (dados.hasOwnProperty(campo)) {
-        console.log(campo);
         novoObjeto[campo] = dados[campo];
       }
     });
-    console.log(novoObjeto);
     return novoObjeto;
   }
   filtrar(dados) {
     if (Array.isArray(dados)) {
-      dados = dados.map(item=>this.filtrarObjeto(item));
+      dados = dados.map((item) => this.filtrarObjeto(item));
     } else {
       dados = this.filtrarObjeto(dados);
     }
@@ -31,14 +42,28 @@ class Serializador {
   }
 }
 class SerializadorFornecedor extends Serializador {
-  constructor(contentType) {
+  constructor(contentType, camposExtras) {
     super();
+    this.tagSingular = "fornecedor";
+    this.tagPlural = "fornecedores";
     this.contentType = contentType;
-    this.camposPublicos = ["id", "empresa", "categoria"];
+    this.camposPublicos = ["id", "empresa", "categoria"].concat(
+      camposExtras || []
+    );
+  }
+}
+class SerializadorErro extends Serializador {
+  constructor(contentType, camposExtras) {
+    super();
+    this.tagSingular = "erro";
+    this.tagPlural = "erros";
+    this.contentType = contentType;
+    this.camposPublicos = ["id", "error"].concat(camposExtras || []);
   }
 }
 module.exports = {
   Serializador,
   SerializadorFornecedor,
-  formatosAceitos: ["application/json"],
+  SerializadorErro,
+  formatosAceitos: ["application/json", "application/xml"],
 };

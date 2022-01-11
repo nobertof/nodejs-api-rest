@@ -6,6 +6,7 @@ const CampoInvalido = require("../erros/CampoInvalido");
 const DadosNaoFornecidos = require("../erros/DadosNaoFornecidos");
 const ValorNaoSuportado = require("../erros/ValorNaoSuportado");
 const formatosAceitos = require("../Serializador").formatosAceitos;
+const SerializadorErro = require("../Serializador").SerializadorErro
 module.exports = () => {
   const app = express();
   app.use(express.urlencoded({ extended: true }));
@@ -38,7 +39,8 @@ module.exports = () => {
     if (error instanceof ValorNaoSuportado) {
       status = 406;
     }
-    return res.status(status).json({ error: error.message, id: error.idErro });
+    const serializador = new SerializadorErro(res.getHeader('Content-Type'))
+    return res.status(status).send(serializador.serializar({ error: error.message, id: error.idErro }));
   });
 
   return app;
