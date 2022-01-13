@@ -10,7 +10,7 @@ module.exports = {
   async buscaPorId(id) {
     const encontrado = await ModeloTabela.findOne({ where: { id:id } });
     if (!encontrado) {
-      throw new NaoEncontrado();
+      throw new NaoEncontrado('Fornecedor');
     }
     return encontrado;
   },

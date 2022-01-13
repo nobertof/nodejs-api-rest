@@ -28,9 +28,10 @@ roteador.get("/:id", async (req, res, next) => {
     const fornecedor = new Fornecedor({ id: id });
     await fornecedor.carregar();
     const serializador = new SerializadorFornecedor(
-        res.getHeader("Content-Type"),['email','dataCriacao','dataAtualizacao','versao']
-      );
-      return res.status(200).send(serializador.serializar(fornecedor));
+      res.getHeader("Content-Type"),
+      ["email", "dataCriacao", "dataAtualizacao", "versao"]
+    );
+    return res.status(200).send(serializador.serializar(fornecedor));
   } catch (error) {
     return next(error);
   }
@@ -43,9 +44,9 @@ roteador.put("/:id", async (req, res, next) => {
     const fornecedor = new Fornecedor(dados);
     await fornecedor.atualizar();
     const serializador = new SerializadorFornecedor(
-        res.getHeader("Content-Type")
-      );
-      return res.status(200).send(serializador.serializar(fornecedor));
+      res.getHeader("Content-Type")
+    );
+    return res.status(200).send(serializador.serializar(fornecedor));
   } catch (error) {
     return next(error);
   }
@@ -63,4 +64,19 @@ roteador.delete("/:id", async (req, res, next) => {
     return next(error);
   }
 });
+
+const roteadorProdutos = require("./produtos");
+const verificarFornecedor = async (req, res, next) => {
+  try {
+    const id = req.params.idFornecedor;
+    const fornecedor = new Fornecedor({ id });
+    await fornecedor.carregar();
+    req.fornecedor = fornecedor
+    next()
+  } catch (error) {
+    next(error);
+  }
+};
+roteador.use("/:idFornecedor/produtos", verificarFornecedor, roteadorProdutos);
+
 module.exports = roteador;
