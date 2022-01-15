@@ -2,6 +2,11 @@ const roteador = require("express").Router({ mergeParams: true });
 const Tabela = require("./TabelaProduto");
 const Produto = require("./Produto");
 const Serializador = require("../../../Serializador").SerializadorProduto;
+roteador.options("/", (req, res, next) => {
+  res.set("Access-Control-Allow-Methods", "GET, POST");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+  res.status(204).end();
+});
 roteador.get("/", async (req, res, next) => {
   const produtos = await Tabela.listar(req.fornecedor.id);
   const serializador = new Serializador(res.getHeader("Content-Type"));
@@ -16,10 +21,23 @@ roteador.post("/", async (req, res, next) => {
     await produto.criar();
     const serializador = new Serializador(res.getHeader("Content-Type"));
 
+    res.set("ETag", produto.versao);
+    const timestamp = new Date(produto.dataAtualizacao).getTime();
+    res.set("Last-Modified", timestamp);
+    res.set(
+      "Location",
+      `/api/fornecedores/${produto.fornecedor}/produtos/${produto.id}`
+    );
+
     res.status(201).send(serializador.serializar(produto));
   } catch (error) {
     next(error);
   }
+});
+roteador.options("/:id", (req, res, next) => {
+  res.set("Access-Control-Allow-Methods", "DELETE, GET, HEAD, PUT");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+  res.status(204).end();
 });
 roteador.delete("/:id", async (req, res, next) => {
   const dados = {
@@ -47,7 +65,28 @@ roteador.get("/:id", async (req, res, next) => {
       "versao",
     ]);
 
+    res.set("ETag", produto.versao);
+    const timestamp = new Date(produto.dataAtualizacao).getTime();
+    res.set("Last-Modified", timestamp);
+
     res.status(200).send(serializador.serializar(produto));
+  } catch (error) {
+    next(error);
+  }
+});
+roteador.head("/:id", async (req, res, next) => {
+  try {
+    const dados = {
+      id: req.params.id,
+      fornecedor: req.fornecedor.id,
+    };
+    const produto = new Produto(dados);
+    await produto.carregar();
+
+    res.set("ETag", produto.versao);
+    const timestamp = new Date(produto.dataAtualizacao).getTime();
+    res.set("Last-Modified", timestamp);
+    res.status(200).end();
   } catch (error) {
     next(error);
   }
@@ -60,10 +99,20 @@ roteador.put("/:id", async (req, res, next) => {
     });
     const produto = new Produto(dados);
     await produto.atualizar();
+    await produto.carregar();
+    res.set("ETag", produto.versao);
+    const timestamp = new Date(produto.dataAtualizacao).getTime();
+    res.set("Last-Modified", timestamp);
+
     res.status(204).end();
   } catch (error) {
     next(error);
   }
+});
+roteador.options("/:id/diminuir-estoque", (req, res, next) => {
+  res.set("Access-Control-Allow-Methods", "POST");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+  res.status(204).end();
 });
 roteador.post("/:id/diminuir-estoque", async (req, res, next) => {
   try {
@@ -74,8 +123,13 @@ roteador.post("/:id/diminuir-estoque", async (req, res, next) => {
 
     await produto.carregar();
     produto.estoque = produto.estoque - req.body.quantidade;
-    await produto.diminuirEstoque()
-    res.status(204).end()
+    await produto.diminuirEstoque();
+    await produto.carregar();
+    res.set("ETag", produto.versao);
+    const timestamp = new Date(produto.dataAtualizacao).getTime();
+    res.set("Last-Modified", timestamp);
+
+    res.status(204).end();
   } catch (error) {
     next(error);
   }

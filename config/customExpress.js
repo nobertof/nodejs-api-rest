@@ -11,6 +11,10 @@ module.exports = () => {
   const app = express();
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
+  app.use((req,res,next)=>{
+    res.set('Access-Control-Allow-Origin','*')
+    next()
+  })
   app.use((req, res, next) => {
     let formatoRequisitado = req.header("Accept");
 
@@ -27,6 +31,9 @@ module.exports = () => {
     next();
   });
   app.use("/api/fornecedores", roteador);
+
+  const roteadorV2 = require('../routes/fornecedores/rotas.v2')
+  app.use('/api/v2/fornecedores/',roteadorV2)
 
   app.use((error, req, res, next) => {
     let status = 500;
